@@ -1,11 +1,19 @@
-// SphereWithShader.jsx
-import { useRef } from 'react'
+import { useRef,useEffect,useMemo} from 'react'
 import { useFrame } from '@react-three/fiber'
 import { ShaderMaterial } from 'three'
 import { DoubleSide } from 'three'
+import { GUI } from 'dat.gui'
 
 const vertexShader = `
     uniform float uTime;
+    uniform float uZoom;
+    uniform float uDisplaceX;
+    uniform float uDisplaceY;
+    uniform float uScaleX;
+    uniform float uScaleY;
+    uniform float uMagPhase;
+    uniform float uNoiseLevel;
+
     varying vec3 vNormal;
     varying vec3 vPosition;
     varying vec2 vUv;
@@ -21,6 +29,14 @@ const vertexShader = `
 const fragmentShader = `
 
   uniform float uTime;
+  uniform float uZoom;
+  uniform float uDisplaceX;
+  uniform float uDisplaceY;
+  uniform float uScaleX;
+  uniform float uScaleY;
+  uniform float uMagPhase;
+  uniform float uNoiseLevel;
+
   varying vec3 vNormal;
   varying vec3 vPosition;
   varying vec2 vUv;
@@ -168,6 +184,10 @@ float noise(vec2 p){
     return temp;
   }
 
+   vec2 func2(vec2 z)
+   {
+      return cx_pow(z,vec2(3.0,0.0));
+   }
 
   ///////////////////////////////////////////////////////////////////
   // para transfomar la función y añadir efecto de líneas de contorno
@@ -233,16 +253,20 @@ float noise(vec2 p){
 
       vec2 st = vec2(fract(vUv.x + uTime * 0.0), vUv.y);
       st = st - 0.5;
-      st *= 6.0;
+      st *= uZoom;
+      st.x += uDisplaceX;
+      st.y += uDisplaceY;
+      st.x *= uScaleX;
+      st.y += uScaleY;
       //st *= rotate2d(uTime*0.01);
       vec2 z = st;
-      vec2 f = g(atomic(z + 0.2*noise(uTime*0.1*z)));
+      vec2 f = g(atomic(z + uNoiseLevel*noise(uTime*0.1*z)));
 
 
       vec2 zpolar = as_polar(f);
       float phase = f.y;  
       float mag   = f.x;
-      phase = map(phase,-PI/2.0,PI/2.0,0.0,1.0);
+      phase = map(phase,-PI/2.0,PI/2.0,0.0,uMagPhase);
       vec3 col1 = pal2(phase);
       vec3 col2 = pal3(mag);
       vec3 col = mix(col1,col2,0.5);
@@ -260,6 +284,27 @@ export default function PlaneWithShader() {
     }
   })
 
+  // Añade GUI una sola vez al montar
+  useEffect(() => {
+    if (!shaderRef.current) return
+
+    const gui = new GUI()
+    const uniforms = shaderRef.current.uniforms
+
+    gui.add(uniforms.uZoom, 'value', 0.1, 10000.0, 0.01).name('Zoom')
+    gui.add(uniforms.uDisplaceX, 'value', -5.0, 100.0, 0.01).name('Desplazamiento X')
+    gui.add(uniforms.uDisplaceY, 'value', -5.0, 100.0, 0.01).name('Desplazamiento Y')
+    gui.add(uniforms.uScaleX, 'value', 0.0, 1.0, 0.001).name('Escala X')
+    gui.add(uniforms.uScaleY, 'value', 0.0, 1.0, 0.001).name('Escala Y')
+    gui.add(uniforms.uMagPhase, 'value', 0.0, 1.0, 0.01).name('MagPhase')
+    gui.add(uniforms.uNoiseLevel, 'value', 0.0, 1.0, 0.01).name('NoiseLevel')
+
+    // Limpia la GUI al desmontar el componente
+    return () => {
+      gui.destroy()
+    }
+  }, [])
+
   return (
     <mesh position={[0,0,0]}>
       <planeGeometry args={[5, 5,128, 128]} />
@@ -268,7 +313,14 @@ export default function PlaneWithShader() {
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
         uniforms={{
-          uTime: { value: 0 }
+          uTime: { value: 0 },
+          uZoom:{value: 1},
+          uDisplaceX:{value:0.0},
+          uDisplaceY:{value:0.0},
+          uScaleX:{value:1.0},
+          uScaleY:{value:1.0},
+          uMagPhase:{value:1.},
+          uNoiseLevel:{value:0.0}
         }}
         side={DoubleSide}
       />
