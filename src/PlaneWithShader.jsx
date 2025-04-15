@@ -231,12 +231,12 @@ float noise(vec2 p){
 
   void main() {
 
-      vec2 st = vec2(fract(vUv.x + uTime * 0.05), vUv.y);
+      vec2 st = vec2(fract(vUv.x + uTime * 0.0), vUv.y);
       st = st - 0.5;
       st *= 6.0;
       //st *= rotate2d(uTime*0.01);
       vec2 z = st;
-      vec2 f = g(atomic(z + noise(uTime*0.1*z)));
+      vec2 f = g(atomic(z + 0.2*noise(uTime*0.1*z)));
 
 
       vec2 zpolar = as_polar(f);
