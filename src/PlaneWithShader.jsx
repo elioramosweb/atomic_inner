@@ -251,7 +251,7 @@ float noise(vec2 p){
 
   void main() {
 
-      vec2 st = vec2(fract(vUv.x + uTime * 0.0), vUv.y);
+      vec2 st = vec2(fract(vUv.x + uTime * 0.), vUv.y);
       st = st - 0.5;
       st *= uZoom;
       st.x += uDisplaceX;
@@ -260,7 +260,7 @@ float noise(vec2 p){
       st.y += uScaleY;
       //st *= rotate2d(uTime*0.01);
       vec2 z = st;
-      vec2 f = g(atomic(z + uNoiseLevel*noise(uTime*0.1*z)));
+      vec2 f = g(atomic(z + 0.25*noise(uTime*0.1*z)));
 
 
       vec2 zpolar = as_polar(f);
@@ -314,7 +314,7 @@ export default function PlaneWithShader() {
         fragmentShader={fragmentShader}
         uniforms={{
           uTime: { value: 0 },
-          uZoom:{value: 1},
+          uZoom:{value: 10},
           uDisplaceX:{value:0.0},
           uDisplaceY:{value:0.0},
           uScaleX:{value:1.0},
